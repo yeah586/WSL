@@ -242,6 +242,29 @@ class WSLCTests
         VERIFY_ARE_EQUAL(version.Revision, WSL_PACKAGE_VERSION_REVISION);
     }
 
+    WSLC_TEST_METHOD(IsClientVersionSupported)
+    {
+        wil::com_ptr<IWSLCSessionManager> sessionManager;
+        VERIFY_SUCCEEDED(CoCreateInstance(__uuidof(WSLCSessionManager), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&sessionManager)));
+
+        BOOL isSupported = FALSE;
+
+        // The current version should always be supported.
+        const WSLCVersion currentVersion{WSL_PACKAGE_VERSION_MAJOR, WSL_PACKAGE_VERSION_MINOR, WSL_PACKAGE_VERSION_REVISION};
+        VERIFY_SUCCEEDED(sessionManager->IsClientVersionSupported(&currentVersion, &isSupported));
+        VERIFY_IS_TRUE(isSupported);
+
+        // A very old version should not be supported.
+        const WSLCVersion oldVersion{1, 0, 0};
+        VERIFY_SUCCEEDED(sessionManager->IsClientVersionSupported(&oldVersion, &isSupported));
+        VERIFY_IS_FALSE(isSupported);
+
+        // A very high version should be supported.
+        const WSLCVersion futureVersion{99, 0, 0};
+        VERIFY_SUCCEEDED(sessionManager->IsClientVersionSupported(&futureVersion, &isSupported));
+        VERIFY_IS_TRUE(isSupported);
+    }
+
     static RunningWSLCProcess::ProcessResult RunCommand(IWSLCSession* session, const std::vector<std::string>& command, int timeout = 600000)
     {
         WSLCProcessLauncher process(command[0], command);
